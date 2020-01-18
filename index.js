@@ -22,19 +22,48 @@ const transactionMiner = new TransactionMiner({ blockchain, transactionPool, wal
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'client/dist')));
 
+app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'client/dist')));
+
 app.get('/api/blocks', (req, res) => {
     res.json(blockchain.chain);
 });
+
+app.get('/api/blocks/length', (req, res) => {
+    res.json(blockchain.chain.length);
+});
+
+app.get('/api/blocks/:id', (req, res) => {
+    const { id } = req.params;
+    const { length } = blockchain.chain;
+
+    const blocksReversed = blockchain.chain.slice().reverse();
+
+    let startIndex = (id - 1) * 5;
+    let endIndex = id * 5;
+
+    startIndex = startIndex < length ? startIndex : length;
+    endIndex = endIndex < length ? endIndex : length;
+
+    res.json(blocksReversed.slice(startIndex, endIndex));
+});
+
 app.post('/api/mine', (req, res) => {
     const { data } = req.body;
+
     blockchain.addBlock({ data });
+
     pubsub.broadcastChain();
+
     res.redirect('/api/blocks');
 });
 
 app.post('/api/transact', (req, res) => {
     const { amount, recipient } = req.body;
-    let transaction = transactionPool.existingTransaction({ inputAddress: wallet.publicKey });
+
+    let transaction = transactionPool
+        .existingTransaction({ inputAddress: wallet.publicKey });
+
     try {
         if (transaction) {
             transaction.update({ senderWallet: wallet, recipient, amount });
@@ -62,33 +91,51 @@ app.get('/api/transaction-pool-map', (req, res) => {
 
 app.get('/api/mine-transactions', (req, res) => {
     transactionMiner.mineTransactions();
+
     res.redirect('/api/blocks');
 });
 
 app.get('/api/wallet-info', (req, res) => {
     const address = wallet.publicKey;
+
     res.json({
-        address: address,
+        address,
         balance: Wallet.calculateBalance({ chain: blockchain.chain, address })
-    })
+    });
+});
+
+app.get('/api/known-addresses', (req, res) => {
+    const addressMap = {};
+
+    for (let block of blockchain.chain) {
+        for (let transaction of block.data) {
+            const recipient = Object.keys(transaction.outputMap);
+
+            recipient.forEach(recipient => addressMap[recipient] = recipient);
+        }
+    }
+
+    res.json(Object.keys(addressMap));
 });
 
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
-
 const syncWithRootState = () => {
     request({ url: `${ROOT_NODE_ADDRESS}/api/blocks` }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
             const rootChain = JSON.parse(body);
+
             console.log('replace chain on a sync with', rootChain);
             blockchain.replaceChain(rootChain);
         }
     });
+
     request({ url: `${ROOT_NODE_ADDRESS}/api/transaction-pool-map` }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
             const rootTransactionPoolMap = JSON.parse(body);
+
             console.log('replace transaction pool map on a sync with', rootTransactionPoolMap);
             transactionPool.setMap(rootTransactionPoolMap);
         }
