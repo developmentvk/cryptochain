@@ -1,6 +1,6 @@
 const TransactionPool = require('./transaction-pool');
 const Transaction = require('./transaction');
-const Wallet = require('.');
+const Wallet = require('./index');
 const Blockchain = require('../blockchain');
 
 describe('TransactionPool', () => {
@@ -20,7 +20,8 @@ describe('TransactionPool', () => {
         it('adds a transaction', () => {
             transactionPool.setTransaction(transaction);
 
-            expect(transactionPool.transactionMap[transaction.id]).toBe(transaction);
+            expect(transactionPool.transactionMap[transaction.id])
+                .toBe(transaction);
         });
     });
 
@@ -36,10 +37,10 @@ describe('TransactionPool', () => {
 
     describe('validTransactions()', () => {
         let validTransactions, errorMock;
+
         beforeEach(() => {
             validTransactions = [];
             errorMock = jest.fn();
-
             global.console.error = errorMock;
 
             for (let i = 0; i < 10; i++) {
@@ -74,6 +75,7 @@ describe('TransactionPool', () => {
     describe('clear()', () => {
         it('clears the transactions', () => {
             transactionPool.clear();
+
             expect(transactionPool.transactionMap).toEqual({});
         });
     });
@@ -82,6 +84,7 @@ describe('TransactionPool', () => {
         it('clears the pool of any existing blockchain transactions', () => {
             const blockchain = new Blockchain();
             const expectedTransactionMap = {};
+
             for (let i = 0; i < 6; i++) {
                 const transaction = new Wallet().createTransaction({
                     recipient: 'foo', amount: 20
@@ -90,7 +93,7 @@ describe('TransactionPool', () => {
                 transactionPool.setTransaction(transaction);
 
                 if (i % 2 === 0) {
-                    blockchain.addBlock({ data: [transaction] });
+                    blockchain.addBlock({ data: [transaction] })
                 } else {
                     expectedTransactionMap[transaction.id] = transaction;
                 }
@@ -101,5 +104,4 @@ describe('TransactionPool', () => {
             expect(transactionPool.transactionMap).toEqual(expectedTransactionMap);
         });
     });
-
 });
