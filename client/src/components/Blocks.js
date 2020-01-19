@@ -17,7 +17,7 @@ class Blocks extends Component {
     fetchPaginatedBlocks = paginatedId => () => {
         fetch(`${document.location.origin}/api/blocks/${paginatedId}`)
             .then(response => response.json())
-            .then(json => this.setState({ blocks: json }))
+            .then(json => this.setState({ blocks: json }));
     }
 
     render() {
@@ -31,12 +31,10 @@ class Blocks extends Component {
                     {
                         [...Array(Math.ceil(this.state.blocksLength / 5)).keys()].map(key => {
                             const paginatedId = key + 1;
+
                             return (
                                 <span key={key} onClick={this.fetchPaginatedBlocks(paginatedId)}>
-                                    <Button
-                                        bsSize="small"
-                                        bsStyle="danger"
-                                    >
+                                    <Button bsSize="small" bsStyle="danger">
                                         {paginatedId}
                                     </Button>{' '}
                                 </span>

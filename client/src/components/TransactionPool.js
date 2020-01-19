@@ -4,7 +4,7 @@ import Transaction from './Transaction';
 import { Link } from 'react-router-dom';
 import history from '../history';
 
-const POLL_INTERVAL_MS = 10000;
+const POLL_INERVAL_MS = 10000;
 
 class TransactionPool extends Component {
     state = { transactionPoolMap: {} };
@@ -18,11 +18,11 @@ class TransactionPool extends Component {
     fetchMineTransactions = () => {
         fetch(`${document.location.origin}/api/mine-transactions`)
             .then(response => {
-                if(response.status === 200) {
+                if (response.status === 200) {
                     alert('success');
                     history.push('/blocks');
                 } else {
-                    alert('The mine-transactions block request did not complete.')
+                    alert('The mine-transactions block request did not complete.');
                 }
             });
     }
@@ -32,11 +32,11 @@ class TransactionPool extends Component {
 
         this.fetchPoolMapInterval = setInterval(
             () => this.fetchTransactionPoolMap(),
-            POLL_INTERVAL_MS
-        )
+            POLL_INERVAL_MS
+        );
     }
 
-    componentWillMount() {
+    componentWillUnmount() {
         clearInterval(this.fetchPoolMapInterval);
     }
 
@@ -55,16 +55,16 @@ class TransactionPool extends Component {
                         )
                     })
                 }
-                <hr/>
+                <hr />
                 <Button
                     bsStyle="danger"
                     onClick={this.fetchMineTransactions}
                 >
                     Mine the Transactions
-                </Button>
+        </Button>
             </div>
         )
     }
-};
+}
 
 export default TransactionPool;

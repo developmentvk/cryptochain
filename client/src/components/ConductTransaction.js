@@ -36,51 +36,49 @@ class ConductTransaction extends Component {
 
     render() {
         return (
-            <div>
-                <div className='ConductTransaction'>
-                    <Link to='/'>Home</Link>
-                    <h3>Conduct a Transaction</h3>
-                    {
-                        this.state.knownAddresses.map(knownAddress => {
-                            return (
-                                <div key={knownAddress}>
-                                    <div>{knownAddress}</div>
-                                    <br/>
-                                </div>
-                            );
-                        })
-                    }
-                    <br/>
-                    <h4>Known Addresses</h4>
-                    <br/>
-                    <FormGroup>
-                        <FormControl
-                            input='text'
-                            placeholder='recipient'
-                            value={this.state.recipient}
-                            onChange={this.updateRecipient}
-                        />
-                    </FormGroup>
-                    <FormGroup>
-                        <FormControl
-                            input='number'
-                            placeholder='amount'
-                            value={this.state.amount}
-                            onChange={this.updateAmount}
-                        />
-                    </FormGroup>
-                    <div>
-                        <Button
-                            bsStyle="danger"
-                            onClick={this.conductTransaction}
-                        >
-                            Submit
-                        </Button>
-                    </div>
+            <div className='ConductTransaction'>
+                <Link to='/'>Home</Link>
+                <h3>Conduct a Transaction</h3>
+                <br />
+                <h4>Known Addresses</h4>
+                {
+                    this.state.knownAddresses.map(knownAddress => {
+                        return (
+                            <div key={knownAddress}>
+                                <div>{knownAddress}</div>
+                                <br />
+                            </div>
+                        );
+                    })
+                }
+                <br />
+                <FormGroup>
+                    <FormControl
+                        input='text'
+                        placeholder='recipient'
+                        value={this.state.recipient}
+                        onChange={this.updateRecipient}
+                    />
+                </FormGroup>
+                <FormGroup>
+                    <FormControl
+                        input='number'
+                        placeholder='amount'
+                        value={this.state.amount}
+                        onChange={this.updateAmount}
+                    />
+                </FormGroup>
+                <div>
+                    <Button
+                        bsStyle="danger"
+                        onClick={this.conductTransaction}
+                    >
+                        Submit
+          </Button>
                 </div>
             </div>
         )
     }
-}
+};
 
 export default ConductTransaction;
