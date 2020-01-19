@@ -5,7 +5,7 @@ import logo from '../assets/logo.jpg';
 class App extends Component {
     state = { walletInfo: {} };
     componentDidMount() {
-        fetch('http://localhost:3000/api/wallet-info')
+        fetch(`${document.location.origin}/api/wallet-info`)
             .then(response => response.json())
             .then(json => this.setState({ walletInfo: json }));
     }
@@ -18,6 +18,8 @@ class App extends Component {
                 <div>Welcome to the blockchain...</div>
                 <br />
                 <div><Link to='/blocks'>Blocks</Link></div>
+                <div><Link to='/conduct-transaction'>Conduct a Transaction</Link></div>
+                <div><Link to='/transaction-pool'>Transaction Pool</Link></div>
                 <br />
                 <div className='WalletInfo'>
                     <div>Address : {address}</div>
