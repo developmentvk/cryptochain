@@ -1,20 +1,20 @@
 const bodyParser = require('body-parser');
 const express = require('express');
+const session = require('express-session');
+const mongoose = require('mongoose');
+const MongoStore = require('connect-mongo')(session);
 const request = require('request');
 const path = require('path');
+const { ROOT_NODE_ADDRESS, SESSION_SECRET, DEFAULT_PORT, REDIS_DEVELOPMENT_URL, REDIS_LIVE_URL, ENVIRONMENT } = require('./config');
 const Blockchain = require('./blockchain');
 const PubSub = require('./app/pubsub');
 const TransactionPool = require('./wallet/transaction-pool');
 const Wallet = require('./wallet');
 const TransactionMiner = require('./app/transaction-miner');
+const error = require('./middleware/error');
 
-const isDevelopment = process.env.ENV === 'development';
-
-const REDIS_URL = isDevelopment ?
-    'redis://127.0.0.1:6379' :
-    'redis://h:p80a937c1d0de87a73a01df9817b5fa9571bb24d21246f5df35ef487e10d76592@ec2-54-174-169-143.compute-1.amazonaws.com:24589'
-const DEFAULT_PORT = 3000;
-const ROOT_NODE_ADDRESS = `http://localhost:${DEFAULT_PORT}`;
+const isDevelopment = process.env.ENV === ENVIRONMENT;
+const REDIS_URL = isDevelopment ? REDIS_DEVELOPMENT_URL : REDIS_LIVE_URL;
 
 const app = express();
 const blockchain = new Blockchain();
@@ -23,8 +23,25 @@ const wallet = new Wallet();
 const pubsub = new PubSub({ blockchain, transactionPool, redisUrl: REDIS_URL });
 const transactionMiner = new TransactionMiner({ blockchain, transactionPool, wallet, pubsub });
 
+const store = new MongoStore({
+    mongooseConnection: mongoose.connection,
+    stringify: false, // if you want to store object instead of id
+});
+const sess = {
+    key: 'session',
+    secret: SESSION_SECRET,
+    resave: true,
+    saveUninitialized: true,
+    store: store
+};
+
+app.use(session(sess));
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'client/dist')));
+
+require('./startup/logging')();
+require('./startup/db')();
+require('./startup/prod')(app);
 
 app.get('/api/blocks', (req, res) => {
     res.json(blockchain.chain);
@@ -123,6 +140,8 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
+app.use(error);
+
 const syncWithRootState = () => {
     request({ url: `${ROOT_NODE_ADDRESS}/api/blocks` }, (error, response, body) => {
         if (!error && response.statusCode === 200) {
@@ -142,46 +161,6 @@ const syncWithRootState = () => {
         }
     });
 };
-
-if (isDevelopment) {
-    const walletFoo = new Wallet();
-    const walletBar = new Wallet();
-
-    const generateWalletTransaction = ({ wallet, recipient, amount }) => {
-        const transaction = wallet.createTransaction({
-            recipient, amount, chain: blockchain.chain
-        });
-
-        transactionPool.setTransaction(transaction);
-    };
-
-    const walletAction = () => generateWalletTransaction({
-        wallet, recipient: walletFoo.publicKey, amount: 5
-    });
-
-    const walletFooAction = () => generateWalletTransaction({
-        wallet: walletFoo, recipient: walletBar.publicKey, amount: 10
-    });
-
-    const walletBarAction = () => generateWalletTransaction({
-        wallet: walletBar, recipient: wallet.publicKey, amount: 15
-    });
-
-    for (let i = 0; i < 20; i++) {
-        if (i % 3 === 0) {
-            walletAction();
-            walletFooAction();
-        } else if (i % 3 === 1) {
-            walletAction();
-            walletBarAction();
-        } else {
-            walletFooAction();
-            walletBarAction();
-        }
-
-        transactionMiner.mineTransactions();
-    }
-}
 
 let PEER_PORT;
 

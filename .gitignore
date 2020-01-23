@@ -4,3 +4,4 @@
 *.cache*
 *dist*
 *secrets*
+*logs*
